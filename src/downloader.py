@@ -1,53 +1,44 @@
-import yt_dlp
 
-from src.config import (
-    ARCHIVE_FILE,
-    FFMPEG_PATH,
-    OUTPUT_TEMPLATE,
+import yt_dlp
+from src.archive import append_archive_title
+from src.config import YDL_OPTS, ARCHIVE_FILE
+from src.archive import (
+    load_download_archive_ids,
+    append_archive_title,
 )
 
 
-def download_music_playlist(url):
+class MusicDownloader:
+    """
+    Handles YouTube Music playlist downloads
+    using yt-dlp and FFmpeg.
+    """
 
-    ydl_opts = {
+    def __init__(self):
+        """
+        Initialize downloader configuration.
+        """
+        self.options = YDL_OPTS
 
-        "format": "bestaudio/best",
+    def download_playlist(self, url):
+        """
+        Download a YouTube playlist and convert
+        all tracks to MP3.
 
-        "outtmpl": OUTPUT_TEMPLATE,
+        Args:
+            url (str): Playlist URL.
+        """
 
-        "ffmpeg_location": FFMPEG_PATH,
 
-        "writethumbnail": True,
+        def progress_hook(status):
 
-        "addmetadata": True,
+            if status.get("status") == "finished":
+                append_archive_title(
+                    ARCHIVE_FILE,
+                    status.get("info_dict", {})
+                )
 
-        "concurrent_fragment_downloads": 4,
+        self.options["progress_hooks"] = [progress_hook]
 
-        "download_archive": ARCHIVE_FILE,
-
-        "keepvideo": False,
-
-        "retries": 10,
-        "fragment_retries": 10,
-
-        "ignoreerrors": True,
-
-        "quiet": False,
-
-        "postprocessors": [
-            {
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            },
-            {
-                "key": "FFmpegMetadata",
-            },
-            {
-                "key": "EmbedThumbnail",
-            },
-        ],
-    }
-
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.download([url])
+        with yt_dlp.YoutubeDL(self.options) as ydl:
+            ydl.download([url])

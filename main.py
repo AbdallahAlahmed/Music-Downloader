@@ -1,5 +1,17 @@
-from src.downloader import download_music_playlist
+
+from src.downloader import MusicDownloader
+
+
+def main():
+
+    playlist_url = input(
+        "Enter the YouTube playlist URL: "
+    )
+
+    downloader = MusicDownloader()
+
+    downloader.download_playlist(playlist_url)
+
 
 if __name__ == "__main__":
-    url = input("Enter playlist URL: ")
-    download_music_playlist(url)
+    main()
