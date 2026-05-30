@@ -6,9 +6,11 @@ Contains:
 - yt-dlp settings
 - Archive file locations
 """
+
 FFMPEG_PATH = r"C:\ffmpeg-8.1.1-essentials_build\bin"
 
 ARCHIVE_FILE = "logs/downloaded.txt"
+LOG_FILE = "logs/download_log.txt"
 
 YDL_OPTS = {
     "format": "bestaudio/best",

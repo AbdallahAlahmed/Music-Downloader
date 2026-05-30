@@ -1,11 +1,15 @@
 
 import yt_dlp
-from src.archive import append_archive_title
-from src.config import YDL_OPTS, ARCHIVE_FILE
-from src.archive import (
-    load_download_archive_ids,
-    append_archive_title,
+
+from src.config import (
+    YDL_OPTS,
+    LOG_FILE,
 )
+
+from src.archive import (
+    append_download_log,
+)
+from src.config import YDL_OPTS, ARCHIVE_FILE
 
 
 class MusicDownloader:
@@ -29,12 +33,15 @@ class MusicDownloader:
             url (str): Playlist URL.
         """
 
-
+        
         def progress_hook(status):
+            """
+            Log completed downloads.
+            """
 
             if status.get("status") == "finished":
-                append_archive_title(
-                    ARCHIVE_FILE,
+                append_download_log(
+                    LOG_FILE,
                     status.get("info_dict", {})
                 )
 
