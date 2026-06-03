@@ -1,3 +1,4 @@
+import threading
 import tkinter as tk
 from tkinter import messagebox
 
@@ -16,22 +17,68 @@ class DownloaderGUI:
         self.url_label.pack(pady=10)
         self.url_entry = tk.Entry(self.root, width=80)
         self.url_entry.pack()
-        self.download_button = tk.Button(self.root, text="Download playlist", command=self.download)
+        self.download_button = tk.Button(self.root, text="Download playlist", command=self.start_download)
         self.download_button.pack(pady=20)
+        self.status_label = tk.Label(self.root, text="Ready to download.")
+        self.status_label.pack()
     
     def download(self):
         """
-        Starts the download process for the playlist URL entered by the user.
+        Download playlist.
         """
-        # Get the playlist URL from the entry widget and start the download process.
+
         url = self.url_entry.get().strip()
-        # Validate the URL before starting the download process.
+
         if not url:
-            messagebox.showerror("Error", "Please enter a valid YouTube playlist URL.")
+
+            self.root.after(
+                0,
+                lambda: messagebox.showerror(
+                    "Error",
+                    "Please enter a playlist URL."
+                )
+            )
+
             return
-        # Call the download_playlist method of the MusicDownloader class to start the download process.
-        self.downloader.download_playlist(url)
-        messagebox.showinfo("Finished", "Playlist downloaded successfully!")
+
+        self.root.after(
+            0,
+            lambda: self.status_label.config(
+                text="Downloading..."
+            )
+        )
+
+        try:
+
+            self.downloader.download_playlist(url)
+
+            self.root.after(
+                0,
+                lambda: self.status_label.config(
+                    text="Download completed"
+                )
+            )
+            self.root.after(
+                0,
+                lambda: self.url_entry.delete(0, tk.END)
+            )
+
+        except Exception as error:
+
+            self.root.after(
+                0,
+                lambda: self.status_label.config(
+                    text=f"Error: {error}"
+                )
+            )
+
+    def start_download(self):
+        """
+        Starts the download process in a separate thread to avoid blocking the GUI.
+        """
+        thread = threading.Thread(target=self.download, daemon=True)
+        thread.start()
+
 
     def run(self):
 
