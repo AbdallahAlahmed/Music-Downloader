@@ -44,7 +44,7 @@ class DownloaderGUI:
         self.root.after(
             0,
             lambda: self.status_label.config(
-                text="Downloading..."
+                text="Downloading playlist..."
             )
         )
 
@@ -55,9 +55,12 @@ class DownloaderGUI:
             self.root.after(
                 0,
                 lambda: self.status_label.config(
-                    text="Download completed"
+                    text="Download completed ✓"
                 )
             )
+            # Re-enable the download button after the download is complete
+            self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
+
             self.root.after(
                 0,
                 lambda: self.url_entry.delete(0, tk.END)
@@ -68,14 +71,19 @@ class DownloaderGUI:
             self.root.after(
                 0,
                 lambda: self.status_label.config(
-                    text=f"Error: {error}"
+                    text="Download failed ✗"
                 )
             )
+            # Re-enable the download button after the download is complete or if an error occurs
+            self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
 
     def start_download(self):
         """
         Starts the download process in a separate thread to avoid blocking the GUI.
         """
+        # Disable the download button to prevent multiple clicks while downloading
+        self.download_button.config(state=tk.DISABLED)
+
         thread = threading.Thread(target=self.download, daemon=True)
         thread.start()
 
