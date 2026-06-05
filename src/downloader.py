@@ -18,11 +18,14 @@ class MusicDownloader:
     using yt-dlp and FFmpeg.
     """
 
-    def __init__(self):
+    def __init__(self, log_callback=None):
         """
         Initialize downloader configuration.
         """
         self.options = YDL_OPTS
+        self.log_callback = log_callback
+
+        self.current_title = None
 
     def download_playlist(self, url):
         """
@@ -38,6 +41,22 @@ class MusicDownloader:
             """
             Log completed downloads.
             """
+            if status.get("status") == "downloading":
+
+                title = (
+                    status
+                    .get("info_dict", {})
+                    .get("title")
+                )
+                if (
+                    title
+                    and title != self.current_title
+                ):
+                    
+                    self.current_title = title
+                    
+                    if self.log_callback:
+                        self.log_callback(f"Downloading: {title}...")
 
             if status.get("status") == "finished":
                 append_download_log(

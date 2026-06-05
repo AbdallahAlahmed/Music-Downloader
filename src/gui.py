@@ -1,7 +1,7 @@
 import threading
 import tkinter as tk
 from tkinter import messagebox
-
+from datetime import datetime
 from src.downloader import MusicDownloader
 # This class is responsible for creating the GUI for the YouTube Music Downloader application.
 class DownloaderGUI:
@@ -22,6 +22,9 @@ class DownloaderGUI:
         self.status_label = tk.Label(self.root, text="Ready to download.")
         self.status_label.pack()
     
+        self.log_text = tk.Text(self.root, height=10, width=80,state="disabled")
+        self.log_text.pack(padx=10,pady=10)
+
     def download(self):
         """
         Download playlist.
@@ -43,10 +46,11 @@ class DownloaderGUI:
 
         self.root.after(
             0,
-            lambda: self.status_label.config(
-                text="Downloading playlist..."
+            lambda: self.log(
+                message="Downloading playlist..."
             )
         )
+        self.downloader = MusicDownloader(log_callback=self.log)
 
         try:
 
@@ -54,8 +58,8 @@ class DownloaderGUI:
 
             self.root.after(
                 0,
-                lambda: self.status_label.config(
-                    text="Download completed ✓"
+                lambda: self.log(
+                    message="Download completed ✓"
                 )
             )
             # Re-enable the download button after the download is complete
@@ -70,8 +74,8 @@ class DownloaderGUI:
 
             self.root.after(
                 0,
-                lambda: self.status_label.config(
-                    text="Download failed ✗"
+                lambda: self.log(
+                    message="Download failed ✗"
                 )
             )
             # Re-enable the download button after the download is complete or if an error occurs
@@ -81,13 +85,22 @@ class DownloaderGUI:
         """
         Starts the download process in a separate thread to avoid blocking the GUI.
         """
+        self.log("Download requested.")
         # Disable the download button to prevent multiple clicks while downloading
         self.download_button.config(state=tk.DISABLED)
 
         thread = threading.Thread(target=self.download, daemon=True)
         thread.start()
 
-
+    def log(self, message):
+        """
+        Logs a message to the log text widget with a timestamp.
+        """
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_text.config(state=tk.NORMAL)
+        self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
+        self.log_text.see(tk.END)
+        self.log_text.config(state=tk.DISABLED)
     def run(self):
 
         self.root.mainloop()
