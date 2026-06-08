@@ -1,6 +1,6 @@
 import threading
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 from datetime import datetime
 from src.downloader import MusicDownloader
 # This class is responsible for creating the GUI for the YouTube Music Downloader application.
@@ -21,9 +21,27 @@ class DownloaderGUI:
         self.download_button.pack(pady=20)
         self.status_label = tk.Label(self.root, text="Ready to download.")
         self.status_label.pack()
-    
+                # Progressbar (toegevoegd)
+        self.progress = ttk.Progressbar(
+            self.root,
+            orient="horizontal",
+            length=400,
+            mode="determinate",
+            maximum=100
+        )
+        self.progress.pack(pady=5)
+
+        # Track teller (toegevoegd)
+        self.progress_label = tk.Label(
+            self.root,
+            text="0 / 0",
+            font=("Consolas", 9),
+            fg="#666"
+        )
+        self.progress_label.pack()
         self.log_text = tk.Text(self.root, height=10, width=80,state="disabled")
         self.log_text.pack(padx=10,pady=10)
+
 
     def download(self):
         """
@@ -46,11 +64,17 @@ class DownloaderGUI:
 
         self.root.after(
             0,
+            lambda: self.status_label.config(
+                text="Downloading playlist..."
+            )
+        )
+        self.root.after(
+            0,
             lambda: self.log(
                 message="Downloading playlist..."
             )
         )
-        self.downloader = MusicDownloader(log_callback=self.log)
+        self.downloader = MusicDownloader(log_callback=self.log, progress_callback=self.update_progress)
 
         try:
 
@@ -80,6 +104,16 @@ class DownloaderGUI:
             )
             # Re-enable the download button after the download is complete or if an error occurs
             self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
+
+    def update_progress(self, current, total):
+        """
+        Update the progress bar based on the current and total number of tracks.
+        """
+        percentage = (current / total) * 100
+        # Thread-safe update to GUI 
+        self.root.after(0, lambda: self.progress.config(value=percentage))
+        self.root.after(0, lambda: self.progress_label.config(text=f"{current} / {total}"))
+        self.root.after(0, lambda: self.status_label.config(text=f"Downloading track {current} of {total}..."))
 
     def start_download(self):
         """
