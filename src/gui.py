@@ -1,3 +1,4 @@
+import os
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -19,9 +20,11 @@ class DownloaderGUI:
         self.url_entry.pack()
         self.download_button = tk.Button(self.root, text="Download playlist", command=self.start_download)
         self.download_button.pack(pady=20)
+        self.open_folder_button = tk.Button(self.root,text="Open Music Folder",command=self.open_music_folder)
+        self.open_folder_button.pack(pady=5)
         self.status_label = tk.Label(self.root, text="Ready to download.")
         self.status_label.pack()
-                # Progressbar (toegevoegd)
+            # Progressbar (toegevoegd)
         self.progress = ttk.Progressbar(
             self.root,
             orient="horizontal",
@@ -61,7 +64,7 @@ class DownloaderGUI:
             )
 
             return
-
+        messagebox.showinfo("Folder not found","No music folder available yet.")
         self.root.after(
             0,
             lambda: self.status_label.config(
@@ -74,6 +77,7 @@ class DownloaderGUI:
                 message="Downloading playlist..."
             )
         )
+        self.open_folder_button.config(state="disabled")
         self.downloader = MusicDownloader(log_callback=self.log, progress_callback=self.update_progress)
 
         try:
@@ -88,7 +92,7 @@ class DownloaderGUI:
             )
             # Re-enable the download button after the download is complete
             self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
-
+            self.open_folder_button.config(state="normal")
             self.root.after(
                 0,
                 lambda: self.url_entry.delete(0, tk.END)
@@ -135,6 +139,18 @@ class DownloaderGUI:
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
+
+    def open_music_folder(self):
+        """
+        Open the music output folder.
+        """
+        music_folder = "music"
+
+        if os.path.exists(music_folder):
+            os.startfile(music_folder)
+        else:
+            self.log("Music folder does not exist.")
+
     def run(self):
 
         self.root.mainloop()
