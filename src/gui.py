@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import threading
-import tkinter as tk
+import customtkinter as ctk
 from tkinter import messagebox, ttk
 from datetime import datetime
 from src.downloader import MusicDownloader
@@ -9,27 +9,29 @@ from src.downloader import MusicDownloader
 class DownloaderGUI:
     """GUI class for the YouTube Music Downloader application."""
     def __init__(self):
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
         self.downloader = MusicDownloader()
 
-        self.root = tk.Tk()
+        self.root = ctk.CTk()
         self.root.title("YouTube Music Downloader")
         self.root.iconbitmap("assets/icon.ico")
         self.root.geometry("700x200")
-        self.url_label = tk.Label(self.root, text="Enter the YouTube playlist URL:")
+        self.url_label = ctk.CTkLabel(self.root, text="Enter the YouTube playlist URL:")
         self.url_label.pack(pady=10)
-        self.url_entry = tk.Entry(self.root, width=80)
+        self.url_entry = ctk.CTkEntry(self.root, width=80)
         self.url_entry.pack()
-        self.paste_button = tk.Button(self.root,text="Paste URL",command=self.paste_url)
+        self.paste_button = ctk.CTkButton(self.root,text="Paste URL",command=self.paste_url)
         self.paste_button.pack(pady=5)
 
-        self.download_button = tk.Button(self.root, text="Download playlist", command=self.start_download)
+        self.download_button = ctk.CTkButton(self.root, text="Download playlist", command=self.start_download)
         self.download_button.pack(pady=20)
-        self.open_folder_button = tk.Button(self.root,text="Open Music Folder",command=self.open_music_folder)
+        self.open_folder_button = ctk.CTkButton(self.root,text="Open Music Folder",command=self.open_music_folder)
         self.open_folder_button.pack(pady=5)
-        self.open_log_button = tk.Button(
+        self.open_log_button = ctk.CTkButton(
         self.root,text="Open Download Log",command=self.open_log)
         self.open_log_button.pack()
-        self.status_label = tk.Label(self.root, text="Ready to download.")
+        self.status_label = ctk.CTkLabel(self.root, text="Ready to download.")
         self.status_label.pack()
             # Progressbar (toegevoegd)
         self.progress = ttk.Progressbar(
@@ -42,14 +44,14 @@ class DownloaderGUI:
         self.progress.pack(pady=5)
 
         # Track teller (toegevoegd)
-        self.progress_label = tk.Label(
+        self.progress_label = ctk.CTkLabel(
             self.root,
             text="0 / 0",
             font=("Consolas", 9),
-            fg="#666"
+            text_color="#666"
         )
         self.progress_label.pack()
-        self.log_text = tk.Text(self.root, height=10, width=80,state="disabled")
+        self.log_text = ctk.CTkTextbox(self.root, height=10, width=80,state="disabled")
         self.log_text.pack(padx=10,pady=10)
 
 
@@ -98,11 +100,11 @@ class DownloaderGUI:
                 )
             )
             # Re-enable the download button after the download is complete
-            self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
+            self.root.after(0, lambda: self.download_button.config(state=ctk.NORMAL))
             self.open_folder_button.config(state="normal")
             self.root.after(
                 0,
-                lambda: self.url_entry.delete(0, tk.END)
+                lambda: self.url_entry.delete(0, ctk.END)
             )
 
         except Exception as error:
@@ -114,7 +116,7 @@ class DownloaderGUI:
                 )
             )
             # Re-enable the download button after the download is complete or if an error occurs
-            self.root.after(0, lambda: self.download_button.config(state=tk.NORMAL))
+            self.root.after(0, lambda: self.download_button.config(state=ctk.NORMAL))
 
     def update_progress(self, current, total):
         """
@@ -132,7 +134,7 @@ class DownloaderGUI:
         """
         self.log("Download requested.")
         # Disable the download button to prevent multiple clicks while downloading
-        self.download_button.config(state=tk.DISABLED)
+        self.download_button.config(state=ctk.DISABLED)
 
         thread = threading.Thread(target=self.download, daemon=True)
         thread.start()
@@ -142,7 +144,7 @@ class DownloaderGUI:
         Logs a message to the log text widget with a timestamp.
         """
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.log_text.config(state=tk.NORMAL)
+        self.log_text.config(state=ctk.NORMAL)
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
@@ -154,7 +156,7 @@ class DownloaderGUI:
         try:
             clipboard_text = self.root.clipboard_get()
 
-            self.url_entry.delete(0, tk.END)
+            self.url_entry.delete(0, ctk.END)
 
             self.url_entry.insert(
                 0,
