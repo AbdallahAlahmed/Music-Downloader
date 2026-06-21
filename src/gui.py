@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import threading
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -12,16 +13,22 @@ class DownloaderGUI:
 
         self.root = tk.Tk()
         self.root.title("YouTube Music Downloader")
-        
+        self.root.iconbitmap("assets/icon.ico")
         self.root.geometry("700x200")
         self.url_label = tk.Label(self.root, text="Enter the YouTube playlist URL:")
         self.url_label.pack(pady=10)
         self.url_entry = tk.Entry(self.root, width=80)
         self.url_entry.pack()
+        self.paste_button = tk.Button(self.root,text="Paste URL",command=self.paste_url)
+        self.paste_button.pack(pady=5)
+
         self.download_button = tk.Button(self.root, text="Download playlist", command=self.start_download)
         self.download_button.pack(pady=20)
         self.open_folder_button = tk.Button(self.root,text="Open Music Folder",command=self.open_music_folder)
         self.open_folder_button.pack(pady=5)
+        self.open_log_button = tk.Button(
+        self.root,text="Open Download Log",command=self.open_log)
+        self.open_log_button.pack()
         self.status_label = tk.Label(self.root, text="Ready to download.")
         self.status_label.pack()
             # Progressbar (toegevoegd)
@@ -139,7 +146,31 @@ class DownloaderGUI:
         self.log_text.insert(tk.END, f"[{timestamp}] {message}\n")
         self.log_text.see(tk.END)
         self.log_text.config(state=tk.DISABLED)
+    def paste_url(self):
+        """
+        Paste URL from clipboard.
+        """
 
+        try:
+            clipboard_text = self.root.clipboard_get()
+
+            self.url_entry.delete(0, tk.END)
+
+            self.url_entry.insert(
+                0,
+                clipboard_text
+            )
+
+            self.log(
+                "URL pasted from clipboard."
+            )
+
+        except Exception:
+
+            self.log(
+                "Clipboard is empty."
+            )
+            
     def open_music_folder(self):
         """
         Open the music output folder.
@@ -150,6 +181,16 @@ class DownloaderGUI:
             os.startfile(music_folder)
         else:
             self.log("Music folder does not exist.")
+
+    def open_log(self) -> None:
+        """Open download log file in default text editor."""
+        log_file = Path(__file__).parent.parent / "logs" / "download_log.txt"
+
+        if not log_file.exists():
+            self.log("Download log not found.")
+            return
+
+        os.startfile(str(log_file))
 
     def run(self):
 
