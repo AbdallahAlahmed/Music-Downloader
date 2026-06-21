@@ -14,26 +14,27 @@ class DownloaderGUI:
     def __init__(self):
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("blue")
-        self.downloader = MusicDownloader()
 
         self.root = ctk.CTk()
         self.root.title("YouTube Music Downloader")
         self.root.geometry("700x600")
 
-        # Fix icon path relative to src/gui.py -> ../assets/icon.ico
+        # Icon
         icon_path = Path(__file__).parent.parent / "assets" / "icon.ico"
         if icon_path.exists():
             self.root.iconbitmap(str(icon_path))
 
         # URL input
-        self.url_label = ctk.CTkLabel(self.root, text="Enter the YouTube playlist URL:")
+        self.url_label = ctk.CTkLabel(
+            self.root, text="Enter the YouTube playlist URL:"
+        )
         self.url_label.pack(pady=10)
 
         self.url_entry = ctk.CTkEntry(
             self.root,
             width=600,
             height=35,
-            placeholder_text="Paste the playlist URL here..."
+            placeholder_text="Paste the playlist URL here...",
         )
         self.url_entry.pack()
 
@@ -44,7 +45,7 @@ class DownloaderGUI:
             self.root,
             width=BUTTON_WIDTH,
             text="Paste URL",
-            command=self.paste_url
+            command=self.paste_url,
         )
         self.paste_button.pack(pady=5)
 
@@ -52,15 +53,27 @@ class DownloaderGUI:
             self.root,
             width=BUTTON_WIDTH,
             text="Download playlist",
-            command=self.start_download
+            command=self.start_download,
         )
-        self.download_button.pack(pady=20)
+        self.download_button.pack(pady=10)
+
+        # Stop button (red, disabled by default)
+        self.stop_button = ctk.CTkButton(
+            self.root,
+            width=BUTTON_WIDTH,
+            text="Stop Download",
+            command=self.stop_download,
+            fg_color="#CC0000",
+            hover_color="#990000",
+            state="disabled",
+        )
+        self.stop_button.pack(pady=5)
 
         self.open_folder_button = ctk.CTkButton(
             self.root,
             width=BUTTON_WIDTH,
             text="Open Music Folder",
-            command=self.open_music_folder
+            command=self.open_music_folder,
         )
         self.open_folder_button.pack(pady=5)
 
@@ -68,7 +81,7 @@ class DownloaderGUI:
             self.root,
             width=BUTTON_WIDTH,
             text="Open Download Log",
-            command=self.open_log
+            command=self.open_log,
         )
         self.open_log_button.pack()
 
@@ -76,13 +89,13 @@ class DownloaderGUI:
         self.status_label = ctk.CTkLabel(self.root, text="Ready to download.")
         self.status_label.pack(pady=10)
 
-        # Progress bar (ttk is standard tkinter — .config() works, but using .configure() for consistency)
+        # Progress bar
         self.progress = ttk.Progressbar(
             self.root,
             orient="horizontal",
             length=400,
             mode="determinate",
-            maximum=100
+            maximum=100,
         )
         self.progress.pack(pady=5)
 
@@ -91,11 +104,11 @@ class DownloaderGUI:
             self.root,
             text="0 / 0",
             font=("Consolas", 9),
-            text_color="#666"
+            text_color="#666",
         )
         self.progress_label.pack()
 
-        # FIX: Use standard tkinter.Text instead of CTkTextbox to avoid state/config bugs
+        # Log
         self.log_text = tk.Text(
             self.root,
             height=15,
@@ -106,96 +119,60 @@ class DownloaderGUI:
             insertbackground="#ffffff",
             relief="flat",
             state="disabled",
-            wrap="word"
+            wrap="word",
         )
         self.log_text.pack(padx=10, pady=10, fill="both", expand=True)
 
     def download(self):
-        """Download playlist in background thread."""
+        """Download playlist in a background thread."""
         url = self.url_entry.get().strip()
 
         if not url:
-            self.root.after(
-                0,
-                lambda: messagebox.showerror("Error", "Please enter a playlist URL.")
+            self._safe_messagebox(
+                "showerror", "Error", "Please enter a playlist URL."
             )
             return
 
-        # Check music folder
         music_folder = "music"
         if not os.path.exists(music_folder):
-            self.root.after(
-                0,
-                lambda: messagebox.showinfo(
-                    "Folder not found",
-                    "No music folder available yet. It will be created."
-                )
+            self._safe_messagebox(
+                "showinfo",
+                "Folder not found",
+                "No music folder available yet. It will be created.",
             )
 
-        self.root.after(
-            0,
-            lambda: self.status_label.configure(
-                text="Downloading playlist...",
-                text_color="orange"
-            )
-        )
-        self.root.after(
-            0,
-            lambda: self.log(message="Downloading playlist...")
-        )
-        self.root.after(
-            0,
-            lambda: self.open_folder_button.configure(state="disabled")
-        )
-
-        self.downloader = MusicDownloader(
-            log_callback=self.log,
-            progress_callback=self.update_progress
-        )
+        self._safe_status("Downloading playlist...", "orange")
+        self._safe_log("Downloading playlist...")
+        self._safe_button(self.open_folder_button, "disabled")
 
         try:
             self.downloader.download_playlist(url)
 
-            self.root.after(
-                0,
-                lambda: self.status_label.configure(
-                    text="Download completed ✓",
-                    text_color="#00FF00"
-                )
-            )
-            self.root.after(
-                0,
-                lambda: self.log(message="Download completed ✓")
-            )
-            self.root.after(
-                0,
-                lambda: self.download_button.configure(state="normal")
-            )
-            self.root.after(
-                0,
-                lambda: self.open_folder_button.configure(state="normal")
-            )
-            self.root.after(
-                0,
-                lambda: self.url_entry.delete(0, "end")
-            )
+            if self.downloader.stop_requested:
+                self._safe_status("Download stopped by user.", "#FF6600")
+                self._safe_log("Download stopped by user.")
+            else:
+                self._safe_status("Download completed ✓", "#00FF00")
+                self._safe_log("Download completed ✓")
 
         except Exception as error:
-            self.root.after(
-                0,
-                lambda: messagebox.showerror(
+            error_msg = str(error)
+            if "stopped by user" in error_msg.lower():
+                self._safe_status("Download stopped by user.", "#FF6600")
+                self._safe_log("Download stopped by user.")
+            else:
+                self._safe_messagebox(
+                    "showerror",
                     "Error",
-                    f"An error occurred during download: {error}", text_color="red"
+                    f"An error occurred during download: {error_msg}",
                 )
-            )
-            self.root.after(
-                0,
-                lambda: self.log(message="Download failed ✗")
-            )
-            self.root.after(
-                0,
-                lambda: self.download_button.configure(state="normal")
-            )
+                self._safe_log("Download failed ✗")
+
+        finally:
+            self._safe_button(self.download_button, "normal")
+            self._safe_button(self.stop_button, "disabled")
+            self._safe_button(self.open_folder_button, "normal")
+            self._safe_entry_clear()
 
     def update_progress(self, current, total):
         """Update progress bar and labels (called from downloader thread)."""
@@ -203,36 +180,81 @@ class DownloaderGUI:
             return
         percentage = (current / total) * 100
 
-        self.root.after(0, lambda: self.progress.configure(value=percentage))
+        self.root.after(
+            0, lambda: self.progress.configure(value=percentage)
+        )
         self.root.after(
             0,
-            lambda: self.progress_label.configure(text=f"{current} / {total}")
+            lambda: self.progress_label.configure(text=f"{current} / {total}"),
         )
         self.root.after(
             0,
             lambda: self.status_label.configure(
                 text=f"Downloading track {current} of {total}..."
-            )
+            ),
         )
 
     def start_download(self):
         """Start download in a separate thread."""
         self.log("Download requested.")
+
+        self.downloader = MusicDownloader(
+            log_callback=self.log,
+            progress_callback=self.update_progress,
+        )
+
         self.download_button.configure(state="disabled")
+        self.stop_button.configure(state="normal")
 
         thread = threading.Thread(target=self.download, daemon=True)
         thread.start()
+
+    def stop_download(self):
+        """Stop the ongoing download."""
+        self.log("Stop requested by user.")
+        self.downloader.stop_download()
+        self.stop_button.configure(state="disabled")
+        self.status_label.configure(
+            text="Stopping download...", text_color="#FF6600"
+        )
+
+    # --- Thread-safe helpers ---
+
+    def _safe_log(self, msg):
+        self.root.after(0, lambda: self.log(msg))
+
+    def _safe_status(self, text, color):
+        self.root.after(
+            0,
+            lambda: self.status_label.configure(text=text, text_color=color),
+        )
+
+    def _safe_button(self, button, state):
+        self.root.after(0, lambda: button.configure(state=state))
+
+    def _safe_entry_clear(self):
+        self.root.after(0, lambda: self.url_entry.delete(0, "end"))
+
+    def _safe_messagebox(self, method, title, message):
+        self.root.after(
+            0, lambda: getattr(messagebox, method)(title, message)
+        )
 
     def log(self, message):
         """Thread-safe log to the text widget."""
         timestamp = datetime.now().strftime("%H:%M:%S")
         line = f"[{timestamp}] {message}\n"
 
-        # Standard tkinter.Text uses .configure() and string states — works perfectly
-        self.log_text.configure(state="normal")
-        self.log_text.insert("end", line)
-        self.log_text.see("end")
-        self.log_text.configure(state="disabled")
+        def _update():
+            self.log_text.configure(state="normal")
+            self.log_text.insert("end", line)
+            self.log_text.see("end")
+            self.log_text.configure(state="disabled")
+
+        if threading.current_thread() is threading.main_thread():
+            _update()
+        else:
+            self.root.after(0, _update)
 
     def paste_url(self):
         """Paste URL from clipboard into the entry field."""
@@ -252,7 +274,7 @@ class DownloaderGUI:
         else:
             self.log("Music folder does not exist.")
 
-    def open_log(self) -> None:
+    def open_log(self):
         """Open download log file in default text editor."""
         log_file = Path(__file__).parent.parent / "logs" / "download_log.txt"
 
