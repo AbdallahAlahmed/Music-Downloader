@@ -57,7 +57,7 @@ class DownloaderGUI:
         )
         self.download_button.pack(pady=10)
 
-        # Stop button (red, disabled by default)
+        # Stop button
         self.stop_button = ctk.CTkButton(
             self.root,
             width=BUTTON_WIDTH,
@@ -157,14 +157,16 @@ class DownloaderGUI:
 
         except Exception as error:
             error_msg = str(error)
+            # "Stopped by user" = geen error dialog
             if "stopped by user" in error_msg.lower():
                 self._safe_status("Download stopped by user.", "#FF6600")
                 self._safe_log("Download stopped by user.")
             else:
+                # Echte error: toon dialog
                 self._safe_messagebox(
                     "showerror",
                     "Error",
-                    f"An error occurred during download: {error_msg}",
+                    f"An error occurred during download:\n{error_msg}",
                 )
                 self._safe_log("Download failed ✗")
 
